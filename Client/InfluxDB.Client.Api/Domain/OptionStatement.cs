@@ -27,7 +27,7 @@ namespace InfluxDB.Client.Api.Domain
     /// A single variable declaration
     /// </summary>
     [DataContract]
-    public partial class OptionStatement :  IEquatable<OptionStatement>
+    public partial class OptionStatement :  Statement
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="OptionStatement" /> class.
