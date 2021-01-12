@@ -27,7 +27,7 @@ namespace InfluxDB.Client.Api.Domain
     /// Represents integer numbers
     /// </summary>
     [DataContract]
-    public partial class IntegerLiteral :  IEquatable<IntegerLiteral>
+    public partial class IntegerLiteral :  Expression
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegerLiteral" /> class.
