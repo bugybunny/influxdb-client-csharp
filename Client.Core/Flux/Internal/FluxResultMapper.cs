@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -16,10 +15,7 @@ namespace InfluxDB.Client.Core.Flux.Internal
 {
     internal class FluxResultMapper
     {
-        // Reflection results are cached for poco type property and attribute lookups as an optimization since
-        // calls are invoked continuously for a given type and will not change over library lifetime
-        private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new ConcurrentDictionary<Type, PropertyInfo[]>();
-        private static readonly ConcurrentDictionary<PropertyInfo, Column> AttributeCache = new ConcurrentDictionary<PropertyInfo, Column>();
+        private readonly AttributesCache _attributesCache = new AttributesCache();
 
         /// <summary>
         /// Maps FluxRecord into custom POCO class.
@@ -41,15 +37,11 @@ namespace InfluxDB.Client.Core.Flux.Internal
                 var recordValues =
                     new Dictionary<string, object>(record.Values, StringComparer.InvariantCultureIgnoreCase);
 
-                var properties = PropertyCache.GetOrAdd(type, _ => type.GetProperties());
+                var properties = _attributesCache.GetProperties(type);
 
                 foreach (var property in properties)
                 {
-                    var attribute = AttributeCache.GetOrAdd(property, _ =>
-                    {
-                        var attributes = property.GetCustomAttributes(typeof(Column), false);
-                        return attributes.Length > 0 ? attributes[0] as Column : null;
-                    });
+                    var attribute = _attributesCache.GetAttribute(property);
 
                     if (attribute != null && attribute.IsTimestamp)
                     {
@@ -57,12 +49,7 @@ namespace InfluxDB.Client.Core.Flux.Internal
                     }
                     else
                     {
-                        var columnName = property.Name;
-
-                        if (attribute != null && !string.IsNullOrEmpty(attribute.Name))
-                        {
-                            columnName = attribute.Name;
-                        }
+                        var columnName = _attributesCache.GetColumnName(attribute, property);
 
                         string col = null;
 
