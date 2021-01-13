@@ -27,7 +27,7 @@ namespace InfluxDB.Client.Api.Domain
     /// Represents boolean values
     /// </summary>
     [DataContract]
-    public partial class BooleanLiteral :  IEquatable<BooleanLiteral>
+    public partial class BooleanLiteral :  Expression
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="BooleanLiteral" /> class.

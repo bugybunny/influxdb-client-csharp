@@ -31,11 +31,6 @@ namespace InfluxDB.Client.Core.Flux.Internal
             });
         }
 
-        public string GetColumnName(PropertyInfo property)
-        {
-            return GetColumnName(GetAttribute(property), property);
-        }
-        
         public string GetColumnName(Column attribute, PropertyInfo property)
         {
             Arguments.CheckNotNull(property, nameof(property));
