@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Mime;
+using System.Text;
 using System.Threading.Tasks;
 using InfluxDB.Client.Core;
 using InfluxDB.Client.Core.Exceptions;
@@ -17,7 +17,7 @@ namespace InfluxDB.Client.Flux
     {
         private readonly LoggingHandler _loggingHandler;
 
-        public FluxClient(FluxConnectionOptions options) : base(new RestClient())
+        public FluxClient(FluxConnectionOptions options) : base(new RestClient(), new FluxResultMapper())
         {
             _loggingHandler = new LoggingHandler(LogLevel.None);
 
@@ -30,7 +30,7 @@ namespace InfluxDB.Client.Flux
             {
                 if (FluxConnectionOptions.AuthenticationType.BasicAuthentication.Equals(options.Authentication))
                 {
-                    var auth = System.Text.Encoding.UTF8.GetBytes(options.Username + ":" + new string(options.Password));
+                    var auth = Encoding.UTF8.GetBytes(options.Username + ":" + new string(options.Password));
                     RestClient.AddDefaultHeader("Authorization", "Basic " + Convert.ToBase64String(auth));
                 }
                 else
@@ -77,7 +77,7 @@ namespace InfluxDB.Client.Flux
         {
             var measurements = new List<T>();
 
-            var consumer = new FluxResponseConsumerPoco<T>((cancellable, poco) => { measurements.Add(poco); });
+            var consumer = new FluxResponseConsumerPoco<T>((cancellable, poco) => { measurements.Add(poco); }, _converter);
 
             await QueryAsync(query, GetDefaultDialect(), consumer, ErrorConsumer, EmptyAction);
 
@@ -186,7 +186,7 @@ namespace InfluxDB.Client.Flux
             Arguments.CheckNotNull(onError, "onError");
             Arguments.CheckNotNull(onComplete, "onComplete");
 
-            var consumer = new FluxResponseConsumerPoco<T>(onNext);
+            var consumer = new FluxResponseConsumerPoco<T>(onNext, _converter);
 
             await QueryAsync(query, GetDefaultDialect(), consumer, onError, onComplete);
         }

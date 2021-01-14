@@ -21,8 +21,8 @@ namespace InfluxDB.Client
         private readonly InfluxDBClientOptions _options;
         private readonly QueryService _service;
 
-        protected internal QueryApi(InfluxDBClientOptions options, QueryService service) : base(service.Configuration
-            .ApiClient.RestClient)
+        protected internal QueryApi(InfluxDBClientOptions options, QueryService service, IFluxResultMapper converter) : base(service.Configuration
+            .ApiClient.RestClient, converter)
         {
             Arguments.CheckNotNull(options, nameof(options));
             Arguments.CheckNotNull(service, nameof(service));
@@ -41,6 +41,15 @@ namespace InfluxDB.Client
                     Dialect.AnnotationsEnum.Default
                 }
             };
+        }
+
+        /// <summary>
+        /// Get mapper of FluxRecord to Entity.
+        /// </summary>
+        /// <returns>shared instance of Mapper</returns>
+        public IFluxResultMapper GetFluxResultMapper()
+        {
+            return _converter;
         }
 
         /// <summary>
@@ -248,7 +257,7 @@ namespace InfluxDB.Client
 
             var measurements = new List<T>();
 
-            var consumer = new FluxResponseConsumerPoco<T>((cancellable, poco) => { measurements.Add(poco); });
+            var consumer = new FluxResponseConsumerPoco<T>((cancellable, poco) => { measurements.Add(poco); }, _converter);
 
             await QueryAsync(query, org, consumer, ErrorConsumer, EmptyAction);
 
@@ -682,7 +691,7 @@ namespace InfluxDB.Client
             Arguments.CheckNotNull(onError, nameof(onError));
             Arguments.CheckNotNull(onComplete, nameof(onComplete));
 
-            var consumer = new FluxResponseConsumerPoco<T>(onNext);
+            var consumer = new FluxResponseConsumerPoco<T>(onNext, _converter);
 
             await QueryAsync(CreateQuery(query, _defaultDialect), org, consumer, onError, onComplete);
         }
@@ -731,7 +740,7 @@ namespace InfluxDB.Client
             Arguments.CheckNotNull(onError, nameof(onError));
             Arguments.CheckNotNull(onComplete, nameof(onComplete));
 
-            var consumer = new FluxResponseConsumerPoco<T>(onNext);
+            var consumer = new FluxResponseConsumerPoco<T>(onNext, _converter);
 
             await QueryAsync(query, org, consumer, onError, onComplete);
         }

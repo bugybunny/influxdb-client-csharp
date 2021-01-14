@@ -11,11 +11,44 @@ using NodaTime;
                               "437e86d95804a1aeeb0de18ac3728782f9dc8dbae2e806167a8bb64c0402278edcefd78c13dbe7f8d13de" +
                               "36eb36221ec215c66ee2dfe7943de97b869c5eea4d92f92d345ced67de5ac8fc3cd2f8dd7e3c0c53bdb0c" +
                               "c433af859033d069cad397a7")]
+[assembly: InternalsVisibleTo("Client.Linq.Test, PublicKey=00240000048000009400000006020000002400005" +
+                              "25341310004000001000100efaac865f88dd35c90dc548945405aae34056eedbe42cad60971f89a861a78" +
+                              "437e86d95804a1aeeb0de18ac3728782f9dc8dbae2e806167a8bb64c0402278edcefd78c13dbe7f8d13de" +
+                              "36eb36221ec215c66ee2dfe7943de97b869c5eea4d92f92d345ced67de5ac8fc3cd2f8dd7e3c0c53bdb0c" +
+                              "c433af859033d069cad397a7")]
+[assembly: InternalsVisibleTo("InfluxDB.Client, PublicKey=00240000048000009400000006020000002400005" +
+                              "25341310004000001000100efaac865f88dd35c90dc548945405aae34056eedbe42cad60971f89a861a78" +
+                              "437e86d95804a1aeeb0de18ac3728782f9dc8dbae2e806167a8bb64c0402278edcefd78c13dbe7f8d13de" +
+                              "36eb36221ec215c66ee2dfe7943de97b869c5eea4d92f92d345ced67de5ac8fc3cd2f8dd7e3c0c53bdb0c" +
+                              "c433af859033d069cad397a7")]
+[assembly: InternalsVisibleTo("InfluxDB.Client.Flux, PublicKey=00240000048000009400000006020000002400005" +
+                              "25341310004000001000100efaac865f88dd35c90dc548945405aae34056eedbe42cad60971f89a861a78" +
+                              "437e86d95804a1aeeb0de18ac3728782f9dc8dbae2e806167a8bb64c0402278edcefd78c13dbe7f8d13de" +
+                              "36eb36221ec215c66ee2dfe7943de97b869c5eea4d92f92d345ced67de5ac8fc3cd2f8dd7e3c0c53bdb0c" +
+                              "c433af859033d069cad397a7")]
+
 namespace InfluxDB.Client.Core.Flux.Internal
 {
-    internal class FluxResultMapper
+    internal class FluxResultMapper : IFluxResultMapper
     {
         private readonly AttributesCache _attributesCache = new AttributesCache();
+
+        public bool IsTimestamp(PropertyInfo propertyInfo)
+        {
+            var attribute = _attributesCache.GetAttribute(propertyInfo);
+            
+            return attribute?.IsTimestamp ?? false;
+        }
+
+        public string GetColumnName(PropertyInfo propertyInfo)
+        {
+            return _attributesCache.GetColumnName(_attributesCache.GetAttribute(propertyInfo), propertyInfo);
+        }
+
+        public T ConvertToEntity<T>(FluxRecord fluxRecord)
+        {
+            return ToPoco<T>(fluxRecord);
+        }
 
         /// <summary>
         /// Maps FluxRecord into custom POCO class.
@@ -31,7 +64,7 @@ namespace InfluxDB.Client.Core.Flux.Internal
             try
             {
                 var type = typeof(T);
-                var poco = (T)Activator.CreateInstance(type);
+                var poco = (T) Activator.CreateInstance(type);
 
                 // copy record to case insensitive dictionary (do this once)
                 var recordValues =
@@ -126,7 +159,8 @@ namespace InfluxDB.Client.Core.Flux.Internal
             {
                 throw new InfluxException(
                     $"Class '{poco.GetType().Name}' field '{property.Name}' was defined with a different field type and caused an exception. " +
-                    $"The correct type is '{value.GetType().Name}' (current field value: '{value}'). Exception: {ex.Message}", ex);
+                    $"The correct type is '{value.GetType().Name}' (current field value: '{value}'). Exception: {ex.Message}",
+                    ex);
             }
         }
 
@@ -144,10 +178,11 @@ namespace InfluxDB.Client.Core.Flux.Internal
 
             if (value is IConvertible)
             {
-                return (DateTime)Convert.ChangeType(value, typeof(DateTime));
+                return (DateTime) Convert.ChangeType(value, typeof(DateTime));
             }
 
-            throw new InvalidCastException($"Object value of type {value.GetType().Name} cannot be converted to {nameof(DateTime)}");
+            throw new InvalidCastException(
+                $"Object value of type {value.GetType().Name} cannot be converted to {nameof(DateTime)}");
         }
 
         private Instant ToInstantValue(object value)
@@ -162,7 +197,8 @@ namespace InfluxDB.Client.Core.Flux.Internal
                 return Instant.FromDateTimeUtc(dateTime);
             }
 
-            throw new InvalidCastException($"Object value of type {value.GetType().Name} cannot be converted to {nameof(Instant)}");
+            throw new InvalidCastException(
+                $"Object value of type {value.GetType().Name} cannot be converted to {nameof(Instant)}");
         }
     }
 }

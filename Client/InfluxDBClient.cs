@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Text;
@@ -14,6 +12,7 @@ using InfluxDB.Client.Api.Service;
 using InfluxDB.Client.Core;
 using InfluxDB.Client.Core.Exceptions;
 using InfluxDB.Client.Core.Internal;
+using InfluxDB.Client.Internal;
 
 namespace InfluxDB.Client
 {
@@ -85,53 +84,58 @@ namespace InfluxDB.Client
         /// <summary>
         /// Get the Query client.
         /// </summary>
+        /// <param name="converter">the converter used for mapping to POCO</param>
         /// <returns>the new client instance for the Query API</returns>
-        public QueryApi GetQueryApi()
+        public QueryApi GetQueryApi(IInfluxDBEntityConverter converter = null)
         {
             var service = new QueryService((Configuration) _apiClient.Configuration)
             {
                 ExceptionFactory = _exceptionFactory
             };
 
-            return new QueryApi(_options, service);
+            return new QueryApi(_options, service, converter ?? new InfluxDBEntityConverter());
         }
 
         /// <summary>
         /// Get the Write client.
         /// </summary>
+        /// <param name="converter">the converter used for mapping to DataPoint</param>
         /// <returns>the new client instance for the Write API</returns>
-        public WriteApi GetWriteApi()
+        public WriteApi GetWriteApi(IInfluxDBEntityConverter converter = null)
         {
-            return GetWriteApi(WriteOptions.CreateNew().Build());
+            return GetWriteApi(WriteOptions.CreateNew().Build(), converter);
         }
         
         /// <summary>
         /// Get the Write async client.
         /// </summary>
+        /// <param name="converter">the converter used for mapping to DataPoint</param>
         /// <returns>the new client instance for the Write API Async without batching</returns>
-        public WriteApiAsync GetWriteApiAsync()
+        public WriteApiAsync GetWriteApiAsync(IInfluxDBEntityConverter converter = null)
         {
             var service = new WriteService((Configuration) _apiClient.Configuration)
             {
                 ExceptionFactory = _exceptionFactory
             };
             
-            return new WriteApiAsync(_options, service, this);
+            return new WriteApiAsync(_options, service, converter ?? new InfluxDBEntityConverter(), this);
         }
 
         /// <summary>
         /// Get the Write client.
         /// </summary>
         /// <param name="writeOptions">the configuration for a write client</param>
+        /// <param name="converter">the converter used for mapping to DataPoint</param>
         /// <returns>the new client instance for the Write API</returns>
-        public WriteApi GetWriteApi(WriteOptions writeOptions)
+        public WriteApi GetWriteApi(WriteOptions writeOptions, IInfluxDBEntityConverter converter = null)
         {
             var service = new WriteService((Configuration) _apiClient.Configuration)
             {
                 ExceptionFactory = _exceptionFactory
             };
 
-            var writeApi = new WriteApi(_options, service, writeOptions, this, _disposeNotification);
+            var writeApi = new WriteApi(_options, service, writeOptions, converter ?? new InfluxDBEntityConverter(),
+                this, _disposeNotification);
 
             return writeApi;
         }

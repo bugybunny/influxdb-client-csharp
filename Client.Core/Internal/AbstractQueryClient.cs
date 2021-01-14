@@ -15,8 +15,6 @@ namespace InfluxDB.Client.Core.Internal
 {
     public abstract class AbstractQueryClient
     {
-        private static readonly FluxResultMapper Mapper = new FluxResultMapper();
-
         protected static readonly Action EmptyAction = () => { };
 
         protected static readonly Action<Exception> ErrorConsumer = e => throw e;
@@ -24,12 +22,15 @@ namespace InfluxDB.Client.Core.Internal
         private readonly FluxCsvParser _csvParser = new FluxCsvParser();
 
         protected readonly RestClient RestClient;
+        protected readonly IFluxResultMapper _converter;
 
-        protected AbstractQueryClient(RestClient restClient)
+        protected AbstractQueryClient(RestClient restClient, IFluxResultMapper converter)
         {
             Arguments.CheckNotNull(restClient, nameof(restClient));
+            Arguments.CheckNotNull(converter, nameof(converter));
 
             RestClient = restClient;
+            _converter = converter;
         }
 
         protected async Task Query(RestRequest query, FluxCsvParser.IFluxResponseConsumer responseConsumer,
@@ -120,7 +121,7 @@ namespace InfluxDB.Client.Core.Internal
             await foreach(var (_, record) in _csvParser.ParseFluxResponseAsync(new StringReader(response.Content), cancellationToken))
             {
                 if (!(record is null))
-                    yield return Mapper.ToPoco<T>(record);
+                    yield return _converter.ConvertToEntity<T>(record);
             }
         }
 
@@ -146,10 +147,12 @@ namespace InfluxDB.Client.Core.Internal
         public class FluxResponseConsumerPoco<T> : FluxCsvParser.IFluxResponseConsumer
         {
             private readonly Action<ICancellable, T> _onNext;
+            private readonly IFluxResultMapper _converter;
 
-            public FluxResponseConsumerPoco(Action<ICancellable, T> onNext)
+            public FluxResponseConsumerPoco(Action<ICancellable, T> onNext, IFluxResultMapper converter)
             {
                 _onNext = onNext;
+                _converter = converter;
             }
 
             public void Accept(int index, ICancellable cancellable, FluxTable table)
@@ -158,7 +161,7 @@ namespace InfluxDB.Client.Core.Internal
 
             public void Accept(int index, ICancellable cancellable, FluxRecord record)
             {
-                _onNext(cancellable, Mapper.ToPoco<T>(record));
+                _onNext(cancellable, _converter.ConvertToEntity<T>(record));
             }
         }
 
