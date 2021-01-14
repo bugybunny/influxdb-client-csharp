@@ -42,13 +42,17 @@ namespace Examples
                     case "PocoQueryWriteExample":
                         await PocoQueryWriteExample.Main(args);
                         break;
+                    case "CustomDomainConverter":
+                        await CustomDomainConverter.Main(args);
+                        break;
                 }
             }
             else
             {
                 Console.WriteLine("Please specify the name of example. One of: " +
                                   "FluxExample, FluxClientSimpleExample, FluxRawExample, FluxClientFactoryExample, " +
-                                  "FluxClientPocoExample, PlatformExample, WriteApiAsyncExample, PocoQueryWriteExample");
+                                  "FluxClientPocoExample, PlatformExample, WriteApiAsyncExample, " +
+                                  "PocoQueryWriteExample, CustomDomainConverter");
             }
         }
     }
