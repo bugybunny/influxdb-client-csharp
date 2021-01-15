@@ -27,7 +27,7 @@ namespace InfluxDB.Client.Api.Domain
     /// Represents floating point numbers according to the double representations defined by the IEEE-754-1985
     /// </summary>
     [DataContract]
-    public partial class FloatLiteral :  IEquatable<FloatLiteral>
+    public partial class FloatLiteral :  Expression
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="FloatLiteral" /> class.
