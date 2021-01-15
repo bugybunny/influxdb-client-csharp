@@ -27,14 +27,14 @@ namespace InfluxDB.Client.Api.Domain
     /// Represents an instant in time with nanosecond precision using the syntax of golang&#39;s RFC3339 Nanosecond variant
     /// </summary>
     [DataContract]
-    public partial class DateTimeLiteral :  IEquatable<DateTimeLiteral>
+    public partial class DateTimeLiteral :  Expression
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="DateTimeLiteral" /> class.
         /// </summary>
         /// <param name="type">Type of AST node.</param>
         /// <param name="value">value.</param>
-        public DateTimeLiteral(string type = default(string), string value = default(string))
+        public DateTimeLiteral(string type = default(string), DateTime value = default(DateTime))
         {
             this.Type = type;
             this.Value = value;
@@ -51,7 +51,7 @@ namespace InfluxDB.Client.Api.Domain
         /// Gets or Sets Value
         /// </summary>
         [DataMember(Name="value", EmitDefaultValue=false)]
-        public string Value { get; set; }
+        public DateTime Value { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object
