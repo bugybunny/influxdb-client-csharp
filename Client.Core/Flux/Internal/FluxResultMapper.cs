@@ -33,18 +33,6 @@ namespace InfluxDB.Client.Core.Flux.Internal
     {
         private readonly AttributesCache _attributesCache = new AttributesCache();
 
-        public bool IsTimestamp(PropertyInfo propertyInfo)
-        {
-            var attribute = _attributesCache.GetAttribute(propertyInfo);
-            
-            return attribute?.IsTimestamp ?? false;
-        }
-
-        public string GetColumnName(PropertyInfo propertyInfo)
-        {
-            return _attributesCache.GetColumnName(_attributesCache.GetAttribute(propertyInfo), propertyInfo);
-        }
-
         public T ConvertToEntity<T>(FluxRecord fluxRecord)
         {
             return ToPoco<T>(fluxRecord);

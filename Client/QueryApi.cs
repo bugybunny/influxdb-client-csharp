@@ -44,15 +44,6 @@ namespace InfluxDB.Client
         }
 
         /// <summary>
-        /// Get mapper of FluxRecord to Entity.
-        /// </summary>
-        /// <returns>shared instance of Mapper</returns>
-        public IFluxResultMapper GetFluxResultMapper()
-        {
-            return _converter;
-        }
-
-        /// <summary>
         /// Executes the Flux query against the InfluxDB 2.0 and synchronously map whole response
         /// to <see cref="FluxTable"/>s.
         ///
