@@ -52,6 +52,25 @@ namespace InfluxDB.Client.Core.Internal
             await Query(query, Consumer, onError, onComplete);
         }
 
+        protected void QuerySync(RestRequest query, FluxCsvParser.IFluxResponseConsumer responseConsumer,
+            Action<Exception> onError,
+            Action onComplete)
+        {
+            void Consumer(ICancellable cancellable, Stream bufferedStream)
+            {
+                try
+                {
+                    _csvParser.ParseFluxResponse(bufferedStream, cancellable, responseConsumer);
+                }
+                catch (IOException e)
+                {
+                    onError(e);
+                }
+            }
+
+            QuerySync(query, Consumer, onError, onComplete);
+        }
+
         protected async Task QueryRaw(RestRequest query,
             Action<ICancellable, string> onResponse,
             Action<Exception> onError,
@@ -95,6 +114,40 @@ namespace InfluxDB.Client.Core.Internal
                 };
 
                 await Task.Run(() => { RestClient.DownloadData(query, true); });
+                if (!cancellable.IsCancelled())
+                {
+                    onComplete();
+                }
+            }
+            catch (Exception e)
+            {
+                onError(e);
+            }
+        }
+
+        protected void QuerySync(RestRequest query, Action<ICancellable, Stream> consumer,
+            Action<Exception> onError, Action onComplete)
+        {
+            Arguments.CheckNotNull(query, "query");
+            Arguments.CheckNotNull(consumer, "consumer");
+            Arguments.CheckNotNull(onError, "onError");
+            Arguments.CheckNotNull(onComplete, "onComplete");
+
+            try
+            {
+                var cancellable = new DefaultCancellable();
+
+                BeforeIntercept(query);
+                    
+                query.AdvancedResponseWriter = (responseStream, response) =>
+                {
+                    responseStream = AfterIntercept((int)response.StatusCode, () => response.Headers, responseStream);
+                    
+                    RaiseForInfluxError(response, responseStream);
+                    consumer(cancellable, responseStream);
+                };
+
+                RestClient.DownloadData(query, true);
                 if (!cancellable.IsCancelled())
                 {
                     onComplete();
